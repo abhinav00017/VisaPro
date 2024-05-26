@@ -1,0 +1,4 @@
+frontend/venv/
+backend/utils/__pycache__ 
+backend/.env 
+backend/client_secret.json
