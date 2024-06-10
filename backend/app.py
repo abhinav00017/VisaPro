@@ -1,8 +1,8 @@
 import os
 import pathlib
 from dotenv import load_dotenv
-from flask import Flask, request, session, abort, redirect
-import requests
+from flask import Flask, request, session, abort, redirect, render_template, jsonify
+import requests, json
 
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
@@ -10,6 +10,7 @@ from pip._vendor import cachecontrol
 import google.auth.transport.requests
 
 from utils.backendopenai import BackendOpenAI
+from db.records import Records
 
 load_dotenv()
 
@@ -17,6 +18,11 @@ app = Flask(__name__)
 app.secret_key = os.getenv('GOOGLE_SECRET_KEY')
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+
+global email
+email = "abhinavch53@gmail.com" 
+
+records = Records()
 
 client_secrets_file = os.path.join(
     pathlib.Path(__file__).parent, "client_secret.json")
@@ -30,6 +36,33 @@ flow = Flow.from_client_secrets_file(
 
 BackendOpenAI = BackendOpenAI(os.getenv('OPENAI_API_KEY'))
 
+threads = []
+
+# def first_thread():
+#     query = "hello"
+#     run, thread = assistant_utils.create_message_and_run(assistant_details, query)
+#     run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+#     print(run.status)
+#     while run.status == "in_progress" or run.status == "queued":
+#         run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+#     messages = client.beta.threads.messages.list(thread_id=thread.id)
+#     return  thread.id,messages, query
+    
+    
+# thread_id,messages,query = first_thread()
+# latest_message = messages.data[0]
+# text = latest_message.content[0].text.value
+
+
+# threads = [{
+#     'id': thread_id, 
+#     'title': thread_id, 
+#     'messages': [{'sender': 'User', 'content': query}, 
+#                 {'sender': 'AI', 'content': text}]
+#     }]
+
+threads = []
+
 def login_is_required(function):
     def wrapper(*args, **kwargs):
         if "google_id" not in session:
@@ -41,14 +74,22 @@ def login_is_required(function):
 
 def login_to_home(function):
     def wrapper1(*args, **kwargs):
-        print(session)
+        print(session['email'])
         if "google_id" not in session:
             return redirect("/") 
         else:
             return redirect("/protected_area")
 
     return wrapper1
-        
+  
+@app.route("/threads")
+def thread():
+    global email
+    threads_list = records.retrieve_record(email)    
+    print(threads_list)
+    return json.dumps({
+        "threads_list": threads_list
+        }) 
 
 @app.route("/login")
 def login():
@@ -78,10 +119,10 @@ def callback():
 
     session["google_id"] = id_info.get("sub")
     session["name"] = id_info.get("name")
-    print(id_info)
-    print(type(id_info))
-    print(session,type(session))
-    return redirect("/protected_area")
+    print('iddd', id_info['email'])
+    print('here',type(id_info))
+    print('oneee',session,type(session))
+    return redirect("/home_screen")
 
 
 @app.route("/logout")
@@ -96,19 +137,22 @@ def logoutsuccessfull():
 
 @app.route('/')
 def hello():
-    return "Hello, World! <a href='/login'><button>Login</button></a>"
+    return render_template('/frontend/Login_landing.html')
 
 
-@app.route("/protected_area")
+@app.route("/home_screen")
 @login_is_required
-def protected_area():
-    return f"Hello {session["name"]}! <br/> <a href='/logout'><button>Logout</button></a>"
+def home_screen():
+    return render_template('/frontend/Home_screen.html', name=session["name"])
 
 
-@app.route('/newuser', methods=['GET', 'POST'])
+@app.route('/add_thread', methods=['GET', 'POST'])
 def newUser():
-    thread_id = BackendOpenAI.create_thread()
-    return thread_id
+    thread_data = BackendOpenAI.create_thread()
+    print(thread_data)
+    global email
+    print(records.create_record({email: [thread_data]}))
+    return thread_data
 
 
 @app.route('/getuser', methods=['GET', 'POST'])
@@ -140,12 +184,10 @@ def deleteUser():
     return f"<h1>Thread Id {response_data}</h1>"
 
 
-@app.route('/query', methods=['POST'])
-def query():
-    data = request.get_json()
-    print(data)
-    thread_id = data['thread_id']
-    message = data['message']
+@app.route('/chat', methods=['POST'])
+def chat():
+    message = request.json.get('message')
+    thread_id = request.json.get('threadId')
     response_data_1 = BackendOpenAI.query_inserstion(thread_id, message)
     print(response_data_1)
     response_data_2 = BackendOpenAI.run_thread(thread_id)
@@ -157,7 +199,63 @@ def query():
         response_data_3 = BackendOpenAI.run_thread_status(thread_id)
     print(response_data_3)
     response_data_4 = BackendOpenAI.get_thread_response(thread_id)
-    return response_data_4['data'][0]['content'][0]['text']['value']
+    response_answer = response_data_4['data'][0]['content'][0]['text']['value']
+    for i in threads:
+        if i['id'] == thread_id:
+            i['messages'].append({'sender': 'user', 'content': message})
+            i['messages'].append({'sender': 'assistant', 'content': response_answer})
+    return jsonify({'response': response_answer, 'threadId': thread_id})
+
+def load_chat(thread_id):
+    # thread_id = request.json.get('threadId')
+    thread = BackendOpenAI.get_thread_data(thread_id)
+    print(thread)
+    messages = []
+    for message in thread['data']:
+            messages.append({
+                'id': message['id'],
+                'sender': message['role'],
+                'content': message['content'][0]['text']['value']
+            })
+    messages = messages[::-1]
+    history = {
+        'id': thread_id,
+        'title': thread_id,
+        'messages': messages
+    }
+    threads.append(history)
+    print(threads)
+    return jsonify(threads)
+
+
+@login_is_required
+@app.route('/threads/<string:thread_id>', methods=['GET'])
+def get_data(thread_id):
+    global threads
+    thread = None
+    print("one ",threads)
+    print(thread_id)
+    if threads != []:
+        thread = next((t for t in threads if t['id'] == thread_id), None)
+    if thread == None:
+        load_chat(thread_id)
+        print("two ",threads)
+        thread = next((t for t in threads if t['id'] == thread_id), None)
+    print("three ",thread)
+    if thread:
+        return jsonify(thread)
+    return jsonify({'error': 'Thread not found'}), 404
+
+@app.route('/profile_page')
+def profile_page():
+    return render_template('/frontend/Profile.html')
+
+# @login_is_required
+# @app.route('/get_threads', methods=['GET'])
+# def get_threads():
+#     return {"thread_ids":[db.fetch_thread_id('database.csv', session["google_id"])]}
+
+
 
 
 if __name__ == '__main__':

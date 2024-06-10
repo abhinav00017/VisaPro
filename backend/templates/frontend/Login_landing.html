@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visa Pro</title>
-    <link rel="stylesheet" href="Login_landing.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='Login_landing.css') }}">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Font1|Font2&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="form">
-        <form action="/newuser" method="get">
+        <form action="/login" method="get">
             <h2>Let's Login !! </h2>
             <button class="gsi-material-button">
                 <div class="gsi-material-button-state"></div>

@@ -1,4 +1,4 @@
-import requests
+import requests, os
 import json
 
 
@@ -106,4 +106,16 @@ class BackendOpenAI:
         response = requests.post(self.base_url + f'threads/{thread_id}/messages',headers=headers, data=data_payload)
         return response.json()
     
+    def get_thread_data(self, thread_id):
+        headers = {
+            "Content-Type": "application/json",
+            "OpenAI-Beta": "assistants=v2",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        response = requests.get(self.base_url + f'threads/{thread_id}/messages', headers=headers)
+        response = response.json()
+        return response
     
+    
+# BackendOpenAI = BackendOpenAI(os.getenv('OPENAI_API_KEY'))
+# BackendOpenAI.get_thread("thread_60yz30RZU4EofjtCNnrLXS9J")
