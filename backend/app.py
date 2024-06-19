@@ -2,7 +2,10 @@ import os
 import pathlib
 from dotenv import load_dotenv
 from flask import Flask, request, session, abort, redirect, render_template, jsonify
-import requests, json
+from flask_session import Session
+from functools import wraps
+import requests
+import json
 
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
@@ -19,8 +22,11 @@ app.secret_key = os.getenv('GOOGLE_SECRET_KEY')
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
+
 global email
-email = "abhinavch53@gmail.com" 
 
 records = Records()
 
@@ -47,49 +53,86 @@ threads = []
 #         run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
 #     messages = client.beta.threads.messages.list(thread_id=thread.id)
 #     return  thread.id,messages, query
-    
-    
+
+
 # thread_id,messages,query = first_thread()
 # latest_message = messages.data[0]
 # text = latest_message.content[0].text.value
 
 
 # threads = [{
-#     'id': thread_id, 
-#     'title': thread_id, 
-#     'messages': [{'sender': 'User', 'content': query}, 
+#     'id': thread_id,
+#     'title': thread_id,
+#     'messages': [{'sender': 'User', 'content': query},
 #                 {'sender': 'AI', 'content': text}]
 #     }]
 
 threads = []
 
+
 def login_is_required(function):
+    @wraps(function)
     def wrapper(*args, **kwargs):
         if "google_id" not in session:
-            return abort(401)  # Authorization required
+            kwargs['status']="loggedout"  # Authorization required
+            return function(*args, **kwargs)
         else:
-            return function()
+            global email
+            email = session["email"]
+            print(session)
+            return function(*args, **kwargs)
 
     return wrapper
+
 
 def login_to_home(function):
     def wrapper1(*args, **kwargs):
         print(session['email'])
         if "google_id" not in session:
-            return redirect("/") 
+            return redirect("/")
         else:
             return redirect("/protected_area")
 
     return wrapper1
-  
-@app.route("/threads")
-def thread():
+
+
+@app.route("/save_user_data", methods=['POST'])
+@login_is_required
+def save_user_data(status=None):
+    if status == "loggedout":
+        return redirect("/")
+    data = request.get_json()
+    print(data)
     global email
-    threads_list = records.retrieve_record(email)    
+    print(records.create_record({email: data}))
+    return "Data Saved Successfully"
+
+
+@app.route("/add_new_user_data")
+@login_is_required
+def add_new_user_data(status=None):
+    if status == "loggedout":
+        return redirect("/")
+    return render_template('/frontend/Add_new_user_data.html')
+
+
+
+@app.route("/threads")
+@login_is_required
+def thread(status=None):
+    if status == "loggedout":
+        return redirect("/")
+    global email
+    threads_list = records.retrieve_record(email)
     print(threads_list)
+    if threads_list == "None":
+        return json.dumps({
+            "threads_list": []
+        })
     return json.dumps({
         "threads_list": threads_list
-        }) 
+    })
+
 
 @app.route("/login")
 def login():
@@ -119,9 +162,12 @@ def callback():
 
     session["google_id"] = id_info.get("sub")
     session["name"] = id_info.get("name")
+    global email
+    email = id_info.get("email")
+    session["email"] = email
     print('iddd', id_info['email'])
-    print('here',type(id_info))
-    print('oneee',session,type(session))
+    print('here', type(id_info))
+    print('oneee', session, type(session))
     return redirect("/home_screen")
 
 
@@ -129,6 +175,7 @@ def callback():
 def logout():
     session.clear()
     return redirect("/logout-successfull")
+
 
 @app.route("/logout-successfull")
 def logoutsuccessfull():
@@ -142,21 +189,51 @@ def hello():
 
 @app.route("/home_screen")
 @login_is_required
-def home_screen():
+def home_screen(status=None):
+    if status == "loggedout":
+        return redirect("/")
+    global email
+    data = records.retrieve_record(email)
+    if data == "None":
+        return redirect("/add_new_user_data")
     return render_template('/frontend/Home_screen.html', name=session["name"])
 
 
 @app.route('/add_thread', methods=['GET', 'POST'])
-def newUser():
+@login_is_required
+def newUser(status=None):
+    if status == "loggedout":
+        return redirect("/")
     thread_data = BackendOpenAI.create_thread()
     print(thread_data)
     global email
-    print(records.create_record({email: [thread_data]}))
+    data = records.retrieve_record(email)
+    if data != "None":
+        data["threads"].append(thread_data)
+    print({email: data})
+    print(records.update_record({email: data}))
     return thread_data
 
 
+@app.route('/add_user', methods=['POST'])
+@login_is_required
+def addUser(status=None):
+    if status == "loggedout":
+        return redirect("/")
+    data = request.get_json()
+    print(data)
+    global email
+    print({email: data})
+    print(records.create_record({email: data}))
+    return "true"
+
+
+
 @app.route('/getuser', methods=['GET', 'POST'])
-def getUser():
+@login_is_required
+def getUser(status=None):
+    if status == "loggedout":
+        return redirect("/")
     data = request.get_json()
     thread_id = data['thread_id']
     response_data = BackendOpenAI.get_thread(thread_id)
@@ -165,7 +242,10 @@ def getUser():
 
 
 @app.route('/modifyuser', methods=['PUT'])
-def modifyUser():
+@login_is_required
+def modifyUser(status=None):
+    if status == "loggedout":
+        return redirect("/")
     data = request.get_json()
     print(data)
     thread_id = data['thread_id']
@@ -176,7 +256,10 @@ def modifyUser():
 
 
 @app.route('/deleteuser', methods=['DELETE'])
-def deleteUser():
+@login_is_required
+def deleteUser(status=None):
+    if status == "loggedout":
+        return redirect("/")
     data = request.get_json()
     thread_id = data['thread_id']
     response_data = BackendOpenAI.delete_thread(thread_id)
@@ -185,7 +268,10 @@ def deleteUser():
 
 
 @app.route('/chat', methods=['POST'])
-def chat():
+@login_is_required
+def chat(status=None):
+    if status == "loggedout":
+        return redirect("/")
     message = request.json.get('message')
     thread_id = request.json.get('threadId')
     response_data_1 = BackendOpenAI.query_inserstion(thread_id, message)
@@ -203,8 +289,10 @@ def chat():
     for i in threads:
         if i['id'] == thread_id:
             i['messages'].append({'sender': 'user', 'content': message})
-            i['messages'].append({'sender': 'assistant', 'content': response_answer})
+            i['messages'].append(
+                {'sender': 'assistant', 'content': response_answer})
     return jsonify({'response': response_answer, 'threadId': thread_id})
+
 
 def load_chat(thread_id):
     # thread_id = request.json.get('threadId')
@@ -212,11 +300,11 @@ def load_chat(thread_id):
     print(thread)
     messages = []
     for message in thread['data']:
-            messages.append({
-                'id': message['id'],
-                'sender': message['role'],
-                'content': message['content'][0]['text']['value']
-            })
+        messages.append({
+            'id': message['id'],
+            'sender': message['role'],
+            'content': message['content'][0]['text']['value']
+        })
     messages = messages[::-1]
     history = {
         'id': thread_id,
@@ -228,34 +316,60 @@ def load_chat(thread_id):
     return jsonify(threads)
 
 
-@login_is_required
+
 @app.route('/threads/<string:thread_id>', methods=['GET'])
 def get_data(thread_id):
     global threads
     thread = None
-    print("one ",threads)
+    print("one ", threads)
     print(thread_id)
     if threads != []:
         thread = next((t for t in threads if t['id'] == thread_id), None)
     if thread == None:
         load_chat(thread_id)
-        print("two ",threads)
+        print("two ", threads)
         thread = next((t for t in threads if t['id'] == thread_id), None)
-    print("three ",thread)
+    print("three ", thread)
     if thread:
         return jsonify(thread)
     return jsonify({'error': 'Thread not found'}), 404
 
+
 @app.route('/profile_page')
-def profile_page():
-    return render_template('/frontend/Profile.html')
+@login_is_required
+def profile_page(status=None):
+    if status == "loggedout":
+        return redirect("/")
+    global email
+    data = records.retrieve_record(email)
+    if data == "None":
+        return redirect("/add_new_user_data")
+    if data.get('phonenumber') == None:
+        data['phonenumber'] = '+91'
+    else:
+        data['phonenumber'] = data.get('phonenumber')
+    return render_template('/frontend/Profile.html', username=data['user_name'], email=email, country=data['country'], phonenumber=data['phonenumber'])
+
+
+@app.route('/update_profile', methods=['POST'])
+@login_is_required
+def update_profile(status=None):
+    if status == "loggedout":
+        return redirect("/")
+    update_data = request.get_json()
+    global email
+    data = records.retrieve_record(email)
+    data['user_name'] = update_data['user_name']
+    data['country'] = update_data['country']
+    data['email'] = update_data['email']
+    data['phonenumber'] = update_data['phonenumber']
+    print(records.update_record({email: data}))
+    return {"status": "Profile Updated Successfully"}
 
 # @login_is_required
 # @app.route('/get_threads', methods=['GET'])
 # def get_threads():
 #     return {"thread_ids":[db.fetch_thread_id('database.csv', session["google_id"])]}
-
-
 
 
 if __name__ == '__main__':

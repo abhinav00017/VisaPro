@@ -29,8 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/threads')
             .then(response => response.json())
             .then(data => {
+                console.log(data);
                 threads.innerHTML = ''; // Clear the threads list before appending new ones
-                data.threads_list.forEach(thread  => {
+                if (data.threads_list.threads.length > 0) {
+                    data.threads_list.threads.forEach(thread  => {
+                    
                     const button = document.createElement('button');
                     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
@@ -46,16 +49,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     button.appendChild(svg);
 
-                 
-                    let parts = thread[0].id.split('_');
+                    let parts = thread.id.split('_');
                     let lastFourValues = parts[parts.length - 1].slice(-4);
                     console.log(lastFourValues);
                     button.appendChild(document.createTextNode("thread_"+lastFourValues));
 
-                    button.addEventListener('click', () => loadThread(thread[0].id));
+                    button.addEventListener('click', () => loadThread(thread.id));
                     threads.appendChild(button);
+                    });
+                }
                 
-                });
+                
             });
     }
 
