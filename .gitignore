@@ -4,3 +4,4 @@ backend/.env
 backend/client_secret.json
 backend/db/__pycache__ 
 backend/templates/frontend/venv
+backend/.flask_session 
