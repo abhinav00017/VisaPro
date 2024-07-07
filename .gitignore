@@ -1,7 +1,6 @@
 venv
 utils/__pycache__ 
 .env 
-client_secret.json
 db/__pycache__ 
 templates/frontend/venv
 flask_session 
