@@ -1,6 +1,6 @@
 import os
 import pathlib
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from flask import Flask, request, session, abort, redirect, render_template, jsonify
 from flask_session import Session
 from functools import wraps
@@ -15,7 +15,7 @@ import google.auth.transport.requests
 from utils.backendopenai import BackendOpenAI
 from db.records import Records
 
-load_dotenv()
+# load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('GOOGLE_SECRET_KEY')
