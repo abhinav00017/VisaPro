@@ -8,37 +8,54 @@ body{
     padding: 0px;
 }
 
+.main_screen{
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    margin-top: 60px;
+    margin-left: 20vw; 
+    overflow: auto
+}
+
+
+@media (min-width: 600px) {
+    .main_screen {
+        margin-left: 300px;
+    }
+}
+
+/* For screens smaller than 600px */
+@media (max-width: 599px) {
+    .main_screen {
+        margin-left: 30vw; 
+    }
+}
 header{
-    height: 72px;
+    background-color: #FFFFFF;
+    height: 60px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 0.5px solid #D7D7D7;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0px;
+    z-index: 2;
 }
-.menu_btn{
-    height: 32px;
-    width: 32px;
-    padding: 4px 4px;
-    border: none;
-    outline: 1px solid rgb(245,245,245);
-    background-color: #FFFFFF;
-    border-radius: 8px;
-    margin: 20px 20px 20px 40px;
-    padding: 4px;
-    cursor: pointer;
-    transform: rotate(0deg);
-    transition: 0.5s;
-}
-
 
 header > h2{
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 20px;
     font-weight: 500;
     color: #F65434;
     font-family: 'Inter', sans-serif;
-    margin-left: 6%;
 }
+
 .credit_profile_btn{
+    margin-left: auto;
     display: flex;
     flex-wrap: wrap;
 }
@@ -74,11 +91,40 @@ header > h2{
     margin: 17px 34px 12px 10px;
 }
 
+#sidebar{
+    margin-top: 55px;
+    height: 100%;
+    width: 75vw; 
+    border-radius: 6px;
+    padding: 24px 12px;
+    border: 1px solid #F0F0F0;
+    position: fixed;
+    top: 0px;
+    left: 0;
+    overflow-y: auto;
+    background-color: #f0f0f0;
+    border-right: 0.5px solid #D7D7D7;
+}
+
+
+@media (min-width: 600px) {
+    #sidebar {
+        width: 300px; 
+    }
+}
+
+/* For screens smaller than 600px */
+@media (max-width: 599px) {
+    #sidebar {
+        width: 30vw; 
+    }
+}
 
 .Recent_btns{
     display: flex;
     flex-direction: column;
     margin-top: 20px;
+    padding-bottom: 15%;
 }
 
 .Recent_btns > button >svg{
@@ -120,6 +166,13 @@ header > h2{
     margin-left: 10px;
 }
 
+.New_chat > button > img{
+    height: 20px;
+    width: 20px;
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
 .Recent_btns > button{
     height: 44px;
     width: 256px;
@@ -136,23 +189,6 @@ header > h2{
     align-items: center;
     cursor: pointer;
 }
-
-#sidebar{
-    height: 750px;
-    width: 280px;
-    border-radius: 6px;
-    padding: 24px 12px;
-    border: 1px solid #F0F0F0;
-    position: fixed;
-    top: 0;
-    left: 0;
-    margin: 88px auto 16px 16px;
-    transform: translateX(-300px);
-    transition: transform 200ms linear;
-}
-
-
-
 
 #sidebar > ul{
     list-style-type: none;
@@ -175,9 +211,6 @@ header > h2{
 #New_enquiry > svg{
     display: inline-flex;
 }
-
-
-
 
 .profile_menu{
     height: 192px;
@@ -212,7 +245,6 @@ header > h2{
     margin: 2px auto 2px auto;
 }
 
-
 .profile_menu > button > svg{
     height: 16px;
     width: 16px;
@@ -224,31 +256,40 @@ header > h2{
     background-color: #F8F8F8;
 }
 
-
-.main_screen{
-    display: flex;
-    flex-direction: column;
-}
-
 .HS1{
     display: flex;
     flex-direction: column;
+    margin-left: 5%;
+    margin-right: 20%;
+    margin-bottom: 10%;
+    overflow-y: auto;
 }
 
-.HS1 > h2{
+@media (min-width: 1300px) {
+    .HS1 {
+        margin-right: 20%; 
+    }
+}
+
+@media (max-width: 1299px) {
+    .HS1 {
+        margin-right: 10%; 
+    }
+}
+
+.recommended_q{
+    padding-top: 200px;
+
+}
+
+.recommended_q > h2{
+    text-align: center;
     font-size: 28px;
     font-family: 'Inter', sans-serif;
     color: #F65434;
 }
-.recommended_q{
-    height: 74px;
-    width: 796px;
-    margin-top: 38px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-}
+
+
 
 .recommended_q > button{
     font-size: 14px;
@@ -262,53 +303,54 @@ header > h2{
     margin: 8px 8px;
 }
 
-
-
 .searchbar_send{
-    height: 48px;
-    width: 960px;
-    border: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     position: fixed;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 0;
+    margin-left: 0%;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    padding-bottom: 20px;
+    background-color: #FFFFFF;
 }
 
-.searchbar_send > button{
+.searchbar{
+    height: 44px;
+    width: 60%;
+    background-color: #FFFFFF;
+    border: 1px solid #E7E7E7;
+    border-radius: 6px;
+    padding-left: 5%;
+    margin-right: 10px;
     border: none;
-    border-radius: 10px;
-    height: 48px;
-    width: 48px;
 }
-.searchbar_send > button > svg{
+
+.searchbar > input{
+    height: 44px;
+    width: 100%;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 16px;
+    outline: 1px solid #E7E7E7;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: #5F5F5F;
+}
+
+.sentbutton > button{
+    border: none;
+}
+
+.sentbutton > button > svg{
     height: 48px;
     width: 48px;
+    border: none;
     border-radius: 10px;
     background-color: #F65434;
     color: #FFFFFF;
     padding: 12px;
-}
-
-.searchbar{
-    display: flex;
-    align-items: center;
-}
-
-.searchbar > input{
-    height: 48px;
-    width: 892px;
-    color: #212121;
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
     border: none;
-    outline: 0.1px solid #ACACAC;
-    border-radius: 8px;
-    padding: 8px 20px;
 }
-
 
 
 .upgrade_monthly{
@@ -520,7 +562,25 @@ header > h2{
 
 
 
-.HS1 > .user{
+.assistant{
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: #474747;
+    background-color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    outline: 1px solid #E7E7E7;
+    margin-right: 10%;
+    padding: 8px 12px;
+    align-self: flex-start;
+    margin-top: 1%;
+    margin-bottom: 1%;
+    margin-left: 2px;
+    overflow: auto;
+    overflow-y: auto;
+}
+
+.user{
     font-size: 14px;
     font-family: 'Inter', sans-serif;
     color: #c38325;
@@ -529,21 +589,13 @@ header > h2{
     border-radius: 8px;
     outline: 1px solid #E7E7E7;
     padding: 8px 12px;
-    margin: 8px 8px;
-    align-self: flex-start;
-}
-
-.HS1 > .assistant{
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
-    color: #474747;
-    background-color: #FFFFFF;
-    border: none;
-    border-radius: 8px;
-    outline: 1px solid #E7E7E7;
-    padding: 8px 12px;
-    margin: 8px 8px;
+    margin-left: 10%;
     align-self: flex-end;
+    margin-top: 1%;
+    margin-bottom: 1%;
+    margin-right: 2px;
+    overflow: auto;
+    overflow-y: auto;
 }
 
 

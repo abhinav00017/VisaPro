@@ -33,12 +33,28 @@ body{
 }
 
 .form > form > input{
+    padding: 10px;
     height: 38px;
     width: 320px;
     border-radius: 10px;
     border: solid 0.5px #B9B9B9;
     margin: 16px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
 }
+
+.form > form > select {
+    padding: 10px;
+    height: 38px;
+    width: 320px;
+    border-radius: 10px;
+    border: solid 0.5px #b9b9b9;
+    margin: 16px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+  }
 
 .form >form > label{
     color: #212121;
@@ -48,11 +64,15 @@ body{
     margin: 16px 20px;
 }
 
-.form >form > input::placeholder{
-    color: #888888;
-    padding: 10px;
-    font-weight: 400;
-}
+.form > form > select > option {
+    color: #212121;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: "Inter", sans-serif;
+    margin: 16px 20px;
+  }
+
+
 
 .form >form > button{
     height: 44px;

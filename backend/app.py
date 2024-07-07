@@ -27,7 +27,6 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 global email
-
 records = Records()
 
 client_secrets_file = os.path.join(
@@ -41,32 +40,6 @@ flow = Flow.from_client_secrets_file(
 )
 
 BackendOpenAI = BackendOpenAI(os.getenv('OPENAI_API_KEY'))
-
-threads = []
-
-# def first_thread():
-#     query = "hello"
-#     run, thread = assistant_utils.create_message_and_run(assistant_details, query)
-#     run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-#     print(run.status)
-#     while run.status == "in_progress" or run.status == "queued":
-#         run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-#     messages = client.beta.threads.messages.list(thread_id=thread.id)
-#     return  thread.id,messages, query
-
-
-# thread_id,messages,query = first_thread()
-# latest_message = messages.data[0]
-# text = latest_message.content[0].text.value
-
-
-# threads = [{
-#     'id': thread_id,
-#     'title': thread_id,
-#     'messages': [{'sender': 'User', 'content': query},
-#                 {'sender': 'AI', 'content': text}]
-#     }]
-
 threads = []
 
 
@@ -81,7 +54,6 @@ def login_is_required(function):
             email = session["email"]
             print(session)
             return function(*args, **kwargs)
-
     return wrapper
 
 
@@ -92,7 +64,6 @@ def login_to_home(function):
             return redirect("/")
         else:
             return redirect("/protected_area")
-
     return wrapper1
 
 
@@ -104,7 +75,8 @@ def save_user_data(status=None):
     data = request.get_json()
     print(data)
     global email
-    print(records.create_record({email: data}))
+    data['email'] = email
+    print(records.create_record(data))
     return "Data Saved Successfully"
 
 
@@ -123,14 +95,14 @@ def thread(status=None):
     if status == "loggedout":
         return redirect("/")
     global email
-    threads_list = records.retrieve_record(email)
-    print(threads_list)
-    if threads_list == "None":
+    data = records.retrieve_record(email)
+    print(data)
+    if data == "None":
         return json.dumps({
-            "threads_list": []
+            "threads_list": data["threads"]
         })
     return json.dumps({
-        "threads_list": threads_list
+        "threads_list": data["threads"]
     })
 
 
@@ -165,9 +137,6 @@ def callback():
     global email
     email = id_info.get("email")
     session["email"] = email
-    print('iddd', id_info['email'])
-    print('here', type(id_info))
-    print('oneee', session, type(session))
     return redirect("/home_screen")
 
 
@@ -181,10 +150,16 @@ def logout():
 def logoutsuccessfull():
     return "Loggedout Successsfully <a href='/'><button>home</button></a>"
 
-
 @app.route('/')
-def hello():
-    return render_template('/frontend/Login_landing.html')
+@login_is_required
+def hello(status=None):
+    if status == "loggedout":
+        return render_template('/frontend/Login_landing.html')
+    global email
+    data = records.retrieve_record(email)
+    if data == "None":
+        return redirect("/add_new_user_data")
+    return redirect('/home_screen')
 
 
 @app.route("/home_screen")
@@ -210,8 +185,8 @@ def newUser(status=None):
     data = records.retrieve_record(email)
     if data != "None":
         data["threads"].append(thread_data)
-    print({email: data})
-    print(records.update_record({email: data}))
+    data['email'] = email
+    print(records.update_record(data))
     return thread_data
 
 
@@ -223,8 +198,8 @@ def addUser(status=None):
     data = request.get_json()
     print(data)
     global email
-    print({email: data})
-    print(records.create_record({email: data}))
+    data['email'] = email
+    print(records.create_record(data))
     return "true"
 
 
@@ -345,7 +320,7 @@ def profile_page(status=None):
     if data == "None":
         return redirect("/add_new_user_data")
     if data.get('phonenumber') == None:
-        data['phonenumber'] = '+91'
+        data['phonenumber'] = ''
     else:
         data['phonenumber'] = data.get('phonenumber')
     return render_template('/frontend/Profile.html', username=data['user_name'], email=email, country=data['country'], phonenumber=data['phonenumber'])
@@ -363,7 +338,7 @@ def update_profile(status=None):
     data['country'] = update_data['country']
     data['email'] = update_data['email']
     data['phonenumber'] = update_data['phonenumber']
-    print(records.update_record({email: data}))
+    print(records.update_record(data))
     return {"status": "Profile Updated Successfully"}
 
 # @login_is_required

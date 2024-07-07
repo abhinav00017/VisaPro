@@ -212,15 +212,26 @@ header > h2{
     outline: 0.3px solid #B9B9B9;
     margin-top: 10px;
     padding: 8px 12px;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+    color:#0b0b0b;
+    background-color: #FFFFFF;
 }
 
-.profile_dtls > div  > input ::placeholder{
-    font-size: 14px;
+.profile_dtls > div  > select{
+    height: 38px;
+    width: 470px;
+    border: none;
+    border-radius: 10px;
+    outline: 0.3px solid #B9B9B9;
+    margin-top: 10px;
+    padding: 8px 12px;
+    font-size: 16px;
     font-family: 'Inter', sans-serif;
-    color:#888888;
+    color:#0b0b0b;
     background-color: #FFFFFF;
-    
 }
+
 
 #Sign_out_btn{
     height: 40px;

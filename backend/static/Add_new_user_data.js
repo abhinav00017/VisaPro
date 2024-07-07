@@ -7,7 +7,12 @@ document.addEventListener('DOMContentLoaded',  () => {
         const user_name = document.getElementById('user_name').value;
         const country = document.getElementById('country').value;
         
-        console.log(user_name);
+        console.log(user_name, country);
+
+        if(user_name==='' || country === ''){
+            alert('Username and country selection must not be empty.');
+            return;
+        }
     
         fetch('/add_user', {
             method: 'POST',
@@ -23,4 +28,6 @@ document.addEventListener('DOMContentLoaded',  () => {
             console.error('Error:', error);
         });
     })
+
+
 });

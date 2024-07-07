@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const menu_btn = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');
     const threads = document.getElementById('Recent_btns');
     const HS1 = document.getElementById('HS1');
@@ -11,28 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
     var lastThread;
     var last_threadId;
 
-    menu_btn.addEventListener('click',function()  {
-        if (sidebar.style.transform === "translateX(-300px)") {
-            sidebar.style.transform = "translateX(0px)";
-            menu_btn.style.transform = "rotate(90deg)";
-        } 
-        else if(sidebar.style.transform === "translateX(0px)"){
-            sidebar.style.transform = "translateX(-300px)"
-            menu_btn.style.transform = "rotate(0deg)"
-        }
-        else {
-            sidebar.style.transform = "translateX(0px)";
-        }
-    });
-
     function fetchThreads() {
         fetch('/threads')
             .then(response => response.json())
             .then(data => {
                 console.log(data);
                 threads.innerHTML = ''; // Clear the threads list before appending new ones
-                if (data.threads_list.threads.length > 0) {
-                    data.threads_list.threads.forEach(thread  => {
+                if (data.threads_list.length > 0) {
+                    data.threads_list.forEach(thread  => {
                     
                     const button = document.createElement('button');
                     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -55,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     button.appendChild(document.createTextNode("thread_"+lastFourValues));
 
                     button.addEventListener('click', () => loadThread(thread.id));
-                    threads.appendChild(button);
+                    threads.prepend(button);
                     });
                 }
                 
@@ -73,8 +58,20 @@ document.addEventListener('DOMContentLoaded', () => {
             messageDiv.appendChild(lineDiv);
         }
         HS1.appendChild(messageDiv);
-        HS1.scrollTop = HS1.scrollHeight;
+        window.requestAnimationFrame(() => {
+            const container = document.querySelector('.HS1');
+            container.scrollTop = container.scrollHeight;
+        });
     }
+
+    function scrollToBottom() {
+        var container = document.querySelector('.HS1');
+        console.log('scrolling to bottom:HS1 '+container.scrollHeight, container.scrollTop, container);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    // Call scrollToBottom() whenever a new message is added
+    scrollToBottom();
 
 
     function loadThread(threadId) {
@@ -87,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.messages.forEach(msg => {
                     addMessage(msg.sender, msg.content);
                 });
+                scrollToBottom();
             });
         }
 
@@ -103,16 +101,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 lineDiv.textContent = line;
                 messageDiv.appendChild(lineDiv);
             }
-            HS1.appendChild(messageDiv);
-            HS1.scrollTop = chat.scrollHeight;
+            if (HS1.lastChild) {
+                HS1.replaceChild(messageDiv, HS1.lastChild);
+            } else {
+                HS1.appendChild(messageDiv);
+            }
+            scrollToBottom();
         }
     }
 
     sendBtn.addEventListener('click', () => {
         const message = userInput.value;
+
         if (message.trim() !== '') {
             addMessage('user', message);
             sendBtn.disabled = true;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'assistant';
+            const loadingGif = document.createElement('img');
+            loadingGif.setAttribute('src', '/static/loading.gif');
+            loadingGif.setAttribute('alt', 'Loading...');
+            loadingGif.style.height = "20px";
+            loadingGif.style.width = "20px";
+
+            const loadingText = document.createElement('span');
+            loadingText.textContent = "Reserching...";
+            loadingText.style.marginLeft = "5px";
+
+            messageDiv.appendChild(loadingGif);
+            messageDiv.appendChild(loadingText);
+            HS1.appendChild(messageDiv);
+            scrollToBottom();
+        
             fetch('/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -131,10 +152,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function addNewThread(newThread) {
+        if (newThread !== undefined) {
+            
+            const button = document.createElement('button');
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('fill', 'currentColor');
+            svg.setAttribute('class', 'w-6 h-6');
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute('fill-rule', 'evenodd');
+            path.setAttribute('d', "M9 4.5a.75.75 0 0 1 .721.544l.813 2.846a3.75 3.75 0 0 0 2.576 2.576l2.846.813a.75.75 0 0 1 0 1.442l-2.846.813a3.75 3.75 0 0 0-2.576 2.576l-.813 2.846a.75.75 0 0 1-1.442 0l-.813-2.846a3.75 3.75 0 0 0-2.576-2.576l-2.846-.813a.75.75 0 0 1 0-1.442l2.846-.813A3.75 3.75 0 0 0 7.466 7.89l.813-2.846A.75.75 0 0 1 9 4.5ZM18 1.5a.75.75 0 0 1 .728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 0 1 0 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 0 1-1.456 0l-.258-1.036a2.625 2.625 0 0 0-1.91-1.91l-1.036-.258a.75.75 0 0 1 0-1.456l1.036-.258a2.625 2.625 0 0 0 1.91-1.91l.258-1.036A.75.75 0 0 1 18 1.5ZM16.5 15a.75.75 0 0 1 .712.513l.394 1.183c.15.447.5.799.948.948l1.183.395a.75.75 0 0 1 0 1.422l-1.183.395c-.447.15-.799.5-.948.948l-.395 1.183a.75.75 0 0 1-1.422 0l-.395-1.183a1.5 1.5 0 0 0-.948-.948l-1.183-.395a.75.75 0 0 1 0-1.422l1.183-.395c.447-.15.799-.5.948-.948l.395-1.183A.75.75 0 0 1 16.5 15Z")
+            path.setAttribute('clip-rule', 'evenodd');
+            svg.appendChild(path);
+
+            button.appendChild(svg);
+
+            let parts = newThread.split('_');
+            let lastFourValues = parts[parts.length - 1].slice(-4);
+            console.log(lastFourValues);
+            button.appendChild(document.createTextNode("thread_"+lastFourValues));
+
+            button.addEventListener('click', () => loadThread(newThread));
+            if (threads.lastChild) {
+                threads.replaceChild(button, threads.firstChild);
+            } else {
+                threads.appendChild(li);
+            }
+        }
+    }
+
     newchat.addEventListener('click', () => {
-        createThread().then(lastThread => {
-            console.log(lastThread);
-            fetchThreads();
+        const button = document.createElement('button');
+
+        const loadingGif = document.createElement('img');
+        loadingGif.setAttribute('src', '/static/loading.gif');
+        loadingGif.setAttribute('alt', 'Loading...');
+        loadingGif.style.height = "20px";
+        loadingGif.style.width = "20px";
+
+        const loadingText = document.createElement('span');
+        loadingText.textContent = "Creating...";
+        loadingText.style.marginLeft = "5px";
+
+        button.appendChild(loadingGif);
+        button.appendChild(loadingText);
+        threads.prepend(button);
+        createThread().then(newThread => {
+            console.log(newThread);
+            lastThread = newThread;
+            addNewThread(newThread);
         });
     });
 
@@ -218,25 +287,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const Search_btn = document.getElementById('searchButton');
     const parentmain = document.getElementById('main_screen');
-    console.log(parentmain);   
-
-    var isFirstTime = true;
-
-    Search_btn.addEventListener('click',function(){
-        var query = document.getElementById('searchInput').value;
-        if(query) {
-            var parentElemant = document.getElementById('HS1');
-            if(isFirstTime){
-                console.log(query, parentElemant);
-                parentElemant.textContent = query;
-                isFirstTime = false;
-            }
-            else {
-                var newElement = document.createElement('p');
-                newElement.textContent = query;
-                parentElemant.appendChild(newElement);
-            }
-        }
-        
-    });
+    console.log(Search_btn, parentmain);   
 });

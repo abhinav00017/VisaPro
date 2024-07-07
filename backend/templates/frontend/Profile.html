@@ -100,8 +100,39 @@
             </div>
 
             <div>
-                <label>Country</label><br>
-                <input type="text" id="country" value="{{ country }}" disabled>
+                <label>Countryy</label><br>
+                <!-- <input type="text" id="country" value="{{ country }}" disabled> -->
+                <!-- <label for="country" >Select country</label><br> -->
+                <select id="country" name="country" disabled>
+                    <option value="India" {% if country == "India" %}selected{% endif %}>🇮🇳 India</option>
+                    <option value="United States" {% if country == "United States" %}selected{% endif %}>🇺🇸 United States</option>
+                    <option value="United Kingdom" {% if country == "United Kingdom" %}selected{% endif %}>🇬🇧 United Kingdom</option>
+                    <option value="Australia" {% if country == "Australia" %}selected{% endif %}>🇦🇺 Australia</option>
+                    <option value="Canada" {% if country == "Canada" %}selected{% endif %}>🇨🇦 Canada</option>
+                    <option value="Germany" {% if country == "Germany" %}selected{% endif %}>🇩🇪 Germany</option>
+                    <option value="France" {% if country == "France" %}selected{% endif %}>🇫🇷 France</option>
+                    <option value="Japan" {% if country == "Japan" %}selected{% endif %}>🇯🇵 Japan</option>
+                    <option value="China" {% if country == "China" %}selected{% endif %}>🇨🇳 China</option>
+                    <option value="Italy" {% if country == "Italy" %}selected{% endif %}>🇮🇹 Italy</option>
+                    <option value="Spain" {% if country == "Spain" %}selected{% endif %}>🇪🇸 Spain</option>
+                    <option value="South Korea" {% if country == "South Korea" %}selected{% endif %}>🇰🇷 South Korea</option>
+                    <option value="Netherlands" {% if country == "Netherlands" %}selected{% endif %}>🇳🇱 Netherlands</option>
+                    <option value="Brazil" {% if country == "Brazil" %}selected{% endif %}>🇧🇷 Brazil</option>
+                    <option value="Russia" {% if country == "Russia" %}selected{% endif %}>🇷🇺 Russia</option>
+                    <option value="Mexico" {% if country == "Mexico" %}selected{% endif %}>🇲🇽 Mexico</option>
+                    <option value="Indonesia" {% if country == "Indonesia" %}selected{% endif %}>🇮🇩 Indonesia</option>
+                    <option value="Turkey" {% if country == "Turkey" %}selected{% endif %}>🇹🇷 Turkey</option>
+                    <option value="Saudi Arabia" {% if country == "Saudi Arabia" %}selected{% endif %}>🇸🇦 Saudi Arabia</option>
+                    <option value="Switzerland" {% if country == "Switzerland" %}selected{% endif %}>🇨🇭 Switzerland</option>
+                    <option value="Sweden" {% if country == "Sweden" %}selected{% endif %}>🇸🇪 Sweden</option>
+                    <option value="Poland" {% if country == "Poland" %}selected{%endif%}>🇵🇱 Poland</option>
+                    <option value="Belgium" {% if country == "Belgium" %}selected{% endif %}>🇧🇪 Belgium</option>
+                    <option value="Thailand" {% if country == "Thailand" %}selected{% endif %}>🇹🇭 Thailand</option>
+                    <option value="Iran" {% if country == "Iran" %}selected{% endif %}>🇮🇷 Iran</option>
+                    <option value="Austria" {% if country == "Austria" %}selected{% endif %}>🇦🇹 Austria</option>
+                    <option value="Norway" {% if country == "Norway" %}selected{% endif %}>🇳🇴 Norway</option>
+                    <option value="UAE" {% if country == "UAE" %}selected{% endif %}>🇦🇪 UAE</option>
+                </select>
             </div>
 
             <div>
