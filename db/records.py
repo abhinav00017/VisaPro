@@ -6,8 +6,6 @@ class Records:
     def __init__(self):
         self.uri = "mongodb+srv://VisaPro:1OXwJt73cMNtp42s@cluster0.ucnfb3p.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
         self.client = MongoClient(self.uri)
-        self.database = self.client["abhinav"]
-        self.collection = self.database["VisaPro"]
         print("Connected to the database")
     
     
@@ -27,7 +25,10 @@ class Records:
 
     
     def retrieve_record(self, email_id):
-        result = self.collection.find_one({'email':email_id})
+        client_main = MongoClient(self.uri)
+        database = client_main["abhinav"]
+        collection = database["VisaPro"]
+        result = collection.find_one({'email':email_id})
         return result
             
     def update_record(self, record):
@@ -51,8 +52,9 @@ class Records:
                         'threads' : record['threads']
                     }
                 }
-            
-            result = self.collection.update_many(query_filter, update_operation)
+            database = self.client["abhinav"]
+            collection = database["VisaPro"]
+            result = collection.update_many(query_filter, update_operation)
 
         except Exception as e:
             return e

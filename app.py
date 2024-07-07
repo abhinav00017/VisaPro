@@ -37,6 +37,7 @@ flow = Flow.from_client_secrets_file(
     scopes=["https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email", "openid"],
     redirect_uri="https://visapro.azurewebsites.net/callback"
+    # redirect_uri="http://localhost:5000/callback"
 )
 
 BackendOpenAI = BackendOpenAI(os.getenv('OPENAI_API_KEY'))
@@ -97,7 +98,8 @@ def thread(status=None):
     global email
     data = records.retrieve_record(email)
     print(data)
-    if data == "None":
+    if data.get("threads") == None:
+        data["threads"] = []
         return json.dumps({
             "threads_list": data["threads"]
         })
@@ -157,7 +159,7 @@ def hello(status=None):
         return render_template('/frontend/Login_landing.html')
     global email
     data = records.retrieve_record(email)
-    if data == "None":
+    if data == None:
         return redirect("/add_new_user_data")
     return redirect('/home_screen')
 
@@ -169,7 +171,7 @@ def home_screen(status=None):
         return redirect("/")
     global email
     data = records.retrieve_record(email)
-    if data == "None":
+    if data == None:
         return redirect("/add_new_user_data")
     return render_template('/frontend/Home_screen.html', name=session["name"])
 
@@ -183,8 +185,11 @@ def newUser(status=None):
     print(thread_data)
     global email
     data = records.retrieve_record(email)
-    if data != "None":
+    print(data)
+    if data["threads"] != None:
         data["threads"].append(thread_data)
+    else:
+        data["threads"] = [thread_data]
     data['email'] = email
     print(records.update_record(data))
     return thread_data
@@ -317,7 +322,7 @@ def profile_page(status=None):
         return redirect("/")
     global email
     data = records.retrieve_record(email)
-    if data == "None":
+    if data == None:
         return redirect("/add_new_user_data")
     if data.get('phonenumber') == None:
         data['phonenumber'] = ''
