@@ -10,7 +10,34 @@ document.addEventListener('DOMContentLoaded', () => {
     var lastThread;
     var last_threadId;
 
+    let threadCount = 0;
+    let maxthreadCount = 18;
+
     function fetchThreads() {
+        sendBtn.disabled = true;
+
+        threads.innerHTML = ''; 
+        const loadingdiv = document.createElement('div');
+        const loadingGif = document.createElement('img');
+        loadingGif.setAttribute('src', '/static/loading.gif');
+        loadingGif.setAttribute('alt', 'Loading...');
+        loadingGif.style.height = "50px";
+        loadingGif.style.width = "50px"; 
+
+        const loadingText = document.createElement('span');
+        loadingText.textContent = "Loading...";
+
+        loadingText.style.paddingTop = "10px";
+        loadingdiv.appendChild(loadingGif);
+        loadingdiv.appendChild(loadingText);
+        loadingdiv.style.display = "flex";
+        loadingdiv.style.flexDirection = "column";
+        loadingdiv.style.width = "100%";
+        loadingdiv.style.alignItems = "center";
+
+        threads.appendChild(loadingdiv);   
+        
+
         fetch('/threads')
             .then(response => response.json())
             .then(data => {
@@ -18,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 threads.innerHTML = ''; // Clear the threads list before appending new ones
                 if (data.threads_list.length > 0) {
                     data.threads_list.forEach(thread  => {
-                    
+                    threadCount++;
                     const button = document.createElement('button');
                     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
@@ -43,8 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     threads.prepend(button);
                     });
                 }
-                
-                
+                else {
+                    threads.textContent = "No threads available.";
+                }
+            }).then(() => {
+                sendBtn.disabled = false;
             });
     }
 
@@ -112,43 +142,99 @@ document.addEventListener('DOMContentLoaded', () => {
 
     sendBtn.addEventListener('click', () => {
         const message = userInput.value;
-
+        sendBtn.disabled = true;
         if (message.trim() !== '') {
-            addMessage('user', message);
-            sendBtn.disabled = true;
+            if (threadCount > maxthreadCount && last_threadId === undefined) {
+                document.getElementById('alertMessage').textContent = "You have reached the maximum limit of 10 threads. Use some Existing thread to continue...";
+                document.getElementById('customAlert').style.display = 'block';
+                
+                setTimeout(() => {
+                    document.getElementById('customAlert').style.display = 'none';
+                }, 5000);
 
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'assistant';
-            const loadingGif = document.createElement('img');
-            loadingGif.setAttribute('src', '/static/loading.gif');
-            loadingGif.setAttribute('alt', 'Loading...');
-            loadingGif.style.height = "20px";
-            loadingGif.style.width = "20px";
-
-            const loadingText = document.createElement('span');
-            loadingText.textContent = "Reserching...";
-            loadingText.style.marginLeft = "5px";
-
-            messageDiv.appendChild(loadingGif);
-            messageDiv.appendChild(loadingText);
-            HS1.appendChild(messageDiv);
-            scrollToBottom();
-        
-            fetch('/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, threadId: last_threadId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                addCurrentMessage('assistant', data.response, data.threadId);
                 sendBtn.disabled = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                sendBtn.disabled = false;
-            });
-            userInput.value = '';
+            }
+            else{
+                console.log("here...."+last_threadId);
+                if (last_threadId === undefined) {
+                    HS1.innerHTML = '';
+                    const button = document.createElement('button');
+
+                    const thread_loadingGif = document.createElement('img');
+                    thread_loadingGif.setAttribute('src', '/static/loading.gif');
+                    thread_loadingGif.setAttribute('alt', 'Loading...');
+                    thread_loadingGif.style.height = "20px";
+                    thread_loadingGif.style.width = "20px";
+
+                    const thread_loadingText = document.createElement('span');
+                    thread_loadingText.textContent = "Creating...";
+                    thread_loadingText.style.marginLeft = "5px";
+
+                    button.appendChild(thread_loadingGif);
+                    button.appendChild(thread_loadingText);
+                    threads.prepend(button);
+                }
+                addMessage('user', message);
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'assistant';
+                const loadingGif = document.createElement('img');
+                loadingGif.setAttribute('src', '/static/loading.gif');
+                loadingGif.setAttribute('alt', 'Loading...');
+                loadingGif.style.height = "20px";
+                loadingGif.style.width = "20px";
+
+                const loadingText = document.createElement('span');
+                loadingText.textContent = "Reserching...";
+                loadingText.style.marginLeft = "5px";
+
+                messageDiv.appendChild(loadingGif);
+                messageDiv.appendChild(loadingText);
+                HS1.appendChild(messageDiv);
+                if (last_threadId === undefined) {
+                    threadCount++;
+                    createThread().then(newThread => {
+                        console.log(newThread);
+                        lastThread = newThread;
+
+                        scrollToBottom();
+                        addNewThread(newThread);
+                        fetch('/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message, threadId: last_threadId })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            addCurrentMessage('assistant', data.response, data.threadId);
+                            sendBtn.disabled = false;
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            sendBtn.disabled = false;
+                        });
+                        userInput.value = '';
+                    });
+                }
+                else{
+                    scrollToBottom();
+                    fetch('/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message, threadId: last_threadId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        addCurrentMessage('assistant', data.response, data.threadId);
+                        sendBtn.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        sendBtn.disabled = false;
+                    });
+                    userInput.value = '';
+                }
+            }  
         }
     });
 
@@ -185,26 +271,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     newchat.addEventListener('click', () => {
-        const button = document.createElement('button');
+        console.log(threadCount);
+        if (threadCount < maxthreadCount) {
+            HS1.innerHTML = '';
+            last_threadId = undefined;
+            const newchatDiv = document.createElement('div');
+            newchatDiv.className = 'recommended_q';
 
-        const loadingGif = document.createElement('img');
-        loadingGif.setAttribute('src', '/static/loading.gif');
-        loadingGif.setAttribute('alt', 'Loading...');
-        loadingGif.style.height = "20px";
-        loadingGif.style.width = "20px";
+            const h2Element = document.createElement('h2');
+            h2Element.textContent = "Type Something to start a new conversation...";
+            newchatDiv.appendChild(h2Element);
+            HS1.appendChild(newchatDiv);
+            
+        }
+        else{
+            document.getElementById('alertMessage').textContent = "You have reached the maximum limit of 10 threads. Use some Existing thread to continue...";
+            document.getElementById('customAlert').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('customAlert').style.display = 'none';
+            }, 5000);
+        }
+        // const button = document.createElement('button');
 
-        const loadingText = document.createElement('span');
-        loadingText.textContent = "Creating...";
-        loadingText.style.marginLeft = "5px";
+        // const loadingGif = document.createElement('img');
+        // loadingGif.setAttribute('src', '/static/loading.gif');
+        // loadingGif.setAttribute('alt', 'Loading...');
+        // loadingGif.style.height = "20px";
+        // loadingGif.style.width = "20px";
 
-        button.appendChild(loadingGif);
-        button.appendChild(loadingText);
-        threads.prepend(button);
-        createThread().then(newThread => {
-            console.log(newThread);
-            lastThread = newThread;
-            addNewThread(newThread);
-        });
+        // const loadingText = document.createElement('span');
+        // loadingText.textContent = "Creating...";
+        // loadingText.style.marginLeft = "5px";
+
+        // button.appendChild(loadingGif);
+        // button.appendChild(loadingText);
+        // threads.prepend(button);
+        // createThread().then(newThread => {
+        //     console.log(newThread);
+        //     lastThread = newThread;
+        //     addNewThread(newThread);
+        // });
     });
 
     async function createThread() {

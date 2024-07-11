@@ -36,8 +36,8 @@ flow = Flow.from_client_secrets_file(
     client_secrets_file=client_secrets_file,
     scopes=["https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email", "openid"],
-    redirect_uri="https://visapro.azurewebsites.net/callback"
-    # redirect_uri="http://localhost:5000/callback"
+    # redirect_uri="https://visapro.azurewebsites.net/callback"
+    redirect_uri="http://localhost:5000/callback"
 )
 
 BackendOpenAI = BackendOpenAI(os.getenv('OPENAI_API_KEY'))
@@ -72,7 +72,7 @@ def login_to_home(function):
 @login_is_required
 def save_user_data(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     data = request.get_json()
     print(data)
     global email
@@ -85,7 +85,7 @@ def save_user_data(status=None):
 @login_is_required
 def add_new_user_data(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     return render_template('/frontend/Add_new_user_data.html')
 
 
@@ -94,7 +94,7 @@ def add_new_user_data(status=None):
 @login_is_required
 def thread(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     global email
     data = records.retrieve_record(email)
     print(data)
@@ -156,6 +156,17 @@ def logoutsuccessfull():
 @login_is_required
 def hello(status=None):
     if status == "loggedout":
+        return render_template('/frontend/landingpage.html')
+    global email
+    data = records.retrieve_record(email)
+    if data == None:
+        return redirect("/add_new_user_data")
+    return redirect('/home_screen')
+
+@app.route("/login_landing")
+@login_is_required
+def login_landing(status=None):
+    if status == "loggedout":
         return render_template('/frontend/Login_landing.html')
     global email
     data = records.retrieve_record(email)
@@ -163,12 +174,11 @@ def hello(status=None):
         return redirect("/add_new_user_data")
     return redirect('/home_screen')
 
-
 @app.route("/home_screen")
 @login_is_required
 def home_screen(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     global email
     data = records.retrieve_record(email)
     if data == None:
@@ -180,7 +190,7 @@ def home_screen(status=None):
 @login_is_required
 def newUser(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     thread_data = BackendOpenAI.create_thread()
     print(thread_data)
     global email
@@ -199,7 +209,7 @@ def newUser(status=None):
 @login_is_required
 def addUser(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     data = request.get_json()
     print(data)
     global email
@@ -213,7 +223,7 @@ def addUser(status=None):
 @login_is_required
 def getUser(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     data = request.get_json()
     thread_id = data['thread_id']
     response_data = BackendOpenAI.get_thread(thread_id)
@@ -225,7 +235,7 @@ def getUser(status=None):
 @login_is_required
 def modifyUser(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     data = request.get_json()
     print(data)
     thread_id = data['thread_id']
@@ -239,7 +249,7 @@ def modifyUser(status=None):
 @login_is_required
 def deleteUser(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     data = request.get_json()
     thread_id = data['thread_id']
     response_data = BackendOpenAI.delete_thread(thread_id)
@@ -251,7 +261,7 @@ def deleteUser(status=None):
 @login_is_required
 def chat(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     message = request.json.get('message')
     thread_id = request.json.get('threadId')
     response_data_1 = BackendOpenAI.query_inserstion(thread_id, message)
@@ -319,7 +329,7 @@ def get_data(thread_id):
 @login_is_required
 def profile_page(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     global email
     data = records.retrieve_record(email)
     if data == None:
@@ -335,7 +345,7 @@ def profile_page(status=None):
 @login_is_required
 def update_profile(status=None):
     if status == "loggedout":
-        return redirect("/")
+        return redirect("/login_landing")
     update_data = request.get_json()
     global email
     data = records.retrieve_record(email)
