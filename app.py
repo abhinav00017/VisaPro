@@ -37,7 +37,8 @@ flow = Flow.from_client_secrets_file(
     scopes=["https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email", "openid"],
     # redirect_uri="https://visapro.azurewebsites.net/callback"
-    redirect_uri="http://localhost:5000/callback"
+    # redirect_uri="http://localhost:5000/callback"
+    redirect_uri="https://visapro-app-fg8hy.ondigitalocean.app/callback"
 )
 
 BackendOpenAI = BackendOpenAI(os.getenv('OPENAI_API_KEY'))
@@ -363,5 +364,4 @@ def update_profile(status=None):
 
 
 if __name__ == '__main__':
-    port = int(os.getenv("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run()
