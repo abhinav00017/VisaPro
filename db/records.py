@@ -52,9 +52,12 @@ class Records:
                         'threads' : record['threads']
                     }
                 }
-            database = self.client["abhinav"]
+                
+            client_main = MongoClient(self.uri)
+            database = client_main["abhinav"]
             collection = database["VisaPro"]
             result = collection.update_many(query_filter, update_operation)
+            return "Updated The Record"
 
         except Exception as e:
             return e

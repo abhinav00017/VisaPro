@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     var lastThread;
     var last_threadId;
+    var NoThreads = false;
 
     let threadCount = 0;
     let maxthreadCount = 18;
@@ -72,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 else {
                     threads.textContent = "No threads available.";
+                    NoThreads = true;
                 }
             }).then(() => {
                 sendBtn.disabled = false;
@@ -157,8 +159,14 @@ document.addEventListener('DOMContentLoaded', () => {
             else{
                 console.log("here...."+last_threadId);
                 if (last_threadId === undefined) {
+                    
                     HS1.innerHTML = '';
                     const button = document.createElement('button');
+
+                    if (NoThreads) {
+                        threads.textContent = '';
+                        NoThreads = false;
+                    }
 
                     const thread_loadingGif = document.createElement('img');
                     thread_loadingGif.setAttribute('src', '/static/loading.gif');

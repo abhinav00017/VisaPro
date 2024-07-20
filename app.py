@@ -1,6 +1,5 @@
 import os
 import pathlib
-from dotenv import load_dotenv
 from flask import Flask, request, session, abort, redirect, render_template, jsonify, url_for
 from flask_oauthlib.client import OAuth
 from flask_session import Session
@@ -16,7 +15,8 @@ import google.auth.transport.requests
 from utils.backendopenai import BackendOpenAI
 from db.records import Records
 
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('GOOGLE_SECRET_KEY')
@@ -45,7 +45,7 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-global email
+
 records = Records()
 
 BackendOpenAI = BackendOpenAI(os.getenv('OPENAI_API_KEY'))
@@ -67,7 +67,6 @@ def authorized():
     print(me.data, me)
     
     session["google_id"] = me.data.get("id")
-    global email
     email = me.data.get("email")
     session["email"] = email
     session["name"] = email.split('@')[0]
@@ -96,7 +95,6 @@ def login_is_required(function):
             kwargs['status']="loggedout"  # Authorization required
             return function(*args, **kwargs)
         else:
-            global email
             email = session["email"]
             print(session)
             return function(*args, **kwargs)
@@ -116,7 +114,7 @@ def login_to_home(function):
 def hello(status=None):
     if status == "loggedout":
         return render_template('/frontend/landingpage.html')
-    global email
+    email = session["email"]
     data = records.retrieve_record(email)
     if data == None:
         return redirect("/add_new_user_data")
@@ -127,7 +125,7 @@ def hello(status=None):
 def login_landing(status=None):
     if status == "loggedout":
         return render_template('/frontend/Login_landing.html')
-    global email
+    email = session["email"]
     data = records.retrieve_record(email)
     if data == None:
         return redirect("/add_new_user_data")
@@ -138,7 +136,7 @@ def login_landing(status=None):
 def home_screen(status=None):
     if status == "loggedout":
         return redirect("/login_landing")
-    global email
+    email = session["email"]
     data = records.retrieve_record(email)
     if data == None:
         return redirect("/add_new_user_data")
@@ -151,7 +149,7 @@ def save_user_data(status=None):
         return redirect("/login_landing")
     data = request.get_json()
     print(data)
-    global email
+    email = session["email"]
     data['email'] = email
     print(records.create_record(data))
     return "Data Saved Successfully"
@@ -169,7 +167,7 @@ def add_new_user_data(status=None):
 def thread(status=None):
     if status == "loggedout":
         return redirect("/login_landing")
-    global email
+    email = session["email"]
     data = records.retrieve_record(email)
     print(data)
     if data.get("threads") == None:
@@ -189,7 +187,7 @@ def newUser(status=None):
         return redirect("/login_landing")
     thread_data = BackendOpenAI.create_thread()
     print(thread_data)
-    global email
+    email = session["email"]
     data = records.retrieve_record(email)
     print(data)
     if data["threads"] != None:
@@ -208,7 +206,7 @@ def addUser(status=None):
         return redirect("/login_landing")
     data = request.get_json()
     print(data)
-    global email
+    email = session["email"]
     data['email'] = email
     print(records.create_record(data))
     return "true"
@@ -324,7 +322,7 @@ def get_data(thread_id):
 def profile_page(status=None):
     if status == "loggedout":
         return redirect("/login_landing")
-    global email
+    email = session["email"]
     data = records.retrieve_record(email)
     if data == None:
         return redirect("/add_new_user_data")
@@ -341,7 +339,7 @@ def update_profile(status=None):
     if status == "loggedout":
         return redirect("/login_landing")
     update_data = request.get_json()
-    global email
+    email = session["email"]
     data = records.retrieve_record(email)
     data['user_name'] = update_data['user_name']
     data['country'] = update_data['country']
