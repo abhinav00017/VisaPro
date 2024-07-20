@@ -1,7 +1,8 @@
 import os
 import pathlib
-# from dotenv import load_dotenv
-from flask import Flask, request, session, abort, redirect, render_template, jsonify
+from dotenv import load_dotenv
+from flask import Flask, request, session, abort, redirect, render_template, jsonify, url_for
+from flask_oauthlib.client import OAuth
 from flask_session import Session
 from functools import wraps
 import requests
@@ -15,12 +16,30 @@ import google.auth.transport.requests
 from utils.backendopenai import BackendOpenAI
 from db.records import Records
 
-# load_dotenv()
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('GOOGLE_SECRET_KEY')
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+
+google_client_id = os.getenv('GOOGLE_CLIENT_ID')
+google_client_secret = os.getenv('GOOGLE_SECRET_KEY')
+google_redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
+
+oauth = OAuth(app)
+
+google = oauth.remote_app(
+    'google',
+    consumer_key=google_client_id,
+    consumer_secret=google_client_secret,
+    request_token_params={
+        'scope': 'email',
+    },
+    base_url='https://www.googleapis.com/oauth2/v1/',
+    request_token_url=None,
+    access_token_method='POST',
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+)
 
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
@@ -29,18 +48,45 @@ Session(app)
 global email
 records = Records()
 
-client_secrets_file = os.path.join(
-    pathlib.Path(__file__).parent, "client_secret.json")
-
-flow = Flow.from_client_secrets_file(
-    client_secrets_file=client_secrets_file,
-    scopes=["https://www.googleapis.com/auth/userinfo.profile",
-            "https://www.googleapis.com/auth/userinfo.email", "openid"],
-    redirect_uri="https://visapro-app-fg8hy.ondigitalocean.app/callback"
-)
-
 BackendOpenAI = BackendOpenAI(os.getenv('OPENAI_API_KEY'))
 threads = []
+
+@app.route("/login")
+def login():
+    return google.authorize(callback=url_for('authorized', _external=True))
+
+@app.route('/login/authorized')
+def authorized():
+    response = google.authorized_response()
+    print(response)
+    if response is None or response.get('access_token') is None:
+        return 'Login failed.'
+
+    session['google_token'] = (response['access_token'], '')
+    me = google.get('userinfo')
+    print(me.data, me)
+    
+    session["google_id"] = me.data.get("id")
+    global email
+    email = me.data.get("email")
+    session["email"] = email
+    session["name"] = email.split('@')[0]
+
+    return redirect(url_for('home_screen'))
+
+@google.tokengetter
+def get_google_oauth_token():
+    return session.get('google_token')
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/logout-successfull")
+
+
+@app.route("/logout-successfull")
+def logoutsuccessfull():
+    return "Loggedout Successsfully <a href='/'><button>home</button></a>"
 
 
 def login_is_required(function):
@@ -56,7 +102,6 @@ def login_is_required(function):
             return function(*args, **kwargs)
     return wrapper
 
-
 def login_to_home(function):
     def wrapper1(*args, **kwargs):
         print(session['email'])
@@ -65,91 +110,6 @@ def login_to_home(function):
         else:
             return redirect("/protected_area")
     return wrapper1
-
-
-@app.route("/save_user_data", methods=['POST'])
-@login_is_required
-def save_user_data(status=None):
-    if status == "loggedout":
-        return redirect("/login_landing")
-    data = request.get_json()
-    print(data)
-    global email
-    data['email'] = email
-    print(records.create_record(data))
-    return "Data Saved Successfully"
-
-
-@app.route("/add_new_user_data")
-@login_is_required
-def add_new_user_data(status=None):
-    if status == "loggedout":
-        return redirect("/login_landing")
-    return render_template('/frontend/Add_new_user_data.html')
-
-
-
-@app.route("/threads")
-@login_is_required
-def thread(status=None):
-    if status == "loggedout":
-        return redirect("/login_landing")
-    global email
-    data = records.retrieve_record(email)
-    print(data)
-    if data.get("threads") == None:
-        data["threads"] = []
-        return json.dumps({
-            "threads_list": data["threads"]
-        })
-    return json.dumps({
-        "threads_list": data["threads"]
-    })
-
-
-@app.route("/login")
-def login():
-    authorization_url, state = flow.authorization_url()
-    session["state"] = state
-    return redirect(authorization_url)
-
-
-@app.route("/callback")
-def callback():
-    flow.fetch_token(authorization_response=request.url)
-
-    if not session["state"] == request.args["state"]:
-        abort(500)  # State does not match!
-
-    credentials = flow.credentials
-    request_session = requests.session()
-    cached_session = cachecontrol.CacheControl(request_session)
-    token_request = google.auth.transport.requests.Request(
-        session=cached_session)
-
-    id_info = id_token.verify_oauth2_token(
-        id_token=credentials._id_token,
-        request=token_request,
-        audience=GOOGLE_CLIENT_ID
-    )
-
-    session["google_id"] = id_info.get("sub")
-    session["name"] = id_info.get("name")
-    global email
-    email = id_info.get("email")
-    session["email"] = email
-    return redirect("/home_screen")
-
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/logout-successfull")
-
-
-@app.route("/logout-successfull")
-def logoutsuccessfull():
-    return "Loggedout Successsfully <a href='/'><button>home</button></a>"
 
 @app.route('/')
 @login_is_required
@@ -184,6 +144,43 @@ def home_screen(status=None):
         return redirect("/add_new_user_data")
     return render_template('/frontend/Home_screen.html', name=session["name"])
 
+@app.route("/save_user_data", methods=['POST'])
+@login_is_required
+def save_user_data(status=None):
+    if status == "loggedout":
+        return redirect("/login_landing")
+    data = request.get_json()
+    print(data)
+    global email
+    data['email'] = email
+    print(records.create_record(data))
+    return "Data Saved Successfully"
+
+
+@app.route("/add_new_user_data")
+@login_is_required
+def add_new_user_data(status=None):
+    if status == "loggedout":
+        return redirect("/login_landing")
+    return render_template('/frontend/Add_new_user_data.html')
+
+@app.route("/threads")
+@login_is_required
+def thread(status=None):
+    if status == "loggedout":
+        return redirect("/login_landing")
+    global email
+    data = records.retrieve_record(email)
+    print(data)
+    if data.get("threads") == None:
+        data["threads"] = []
+        return json.dumps({
+            "threads_list": data["threads"]
+        })
+    return json.dumps({
+        "threads_list": data["threads"]
+    })
+    
 
 @app.route('/add_thread', methods=['GET', 'POST'])
 @login_is_required
@@ -215,7 +212,6 @@ def addUser(status=None):
     data['email'] = email
     print(records.create_record(data))
     return "true"
-
 
 
 @app.route('/getuser', methods=['GET', 'POST'])
@@ -305,7 +301,6 @@ def load_chat(thread_id):
     return jsonify(threads)
 
 
-
 @app.route('/threads/<string:thread_id>', methods=['GET'])
 def get_data(thread_id):
     global threads
@@ -354,11 +349,6 @@ def update_profile(status=None):
     data['phonenumber'] = update_data['phonenumber']
     print(records.update_record(data))
     return {"status": "Profile Updated Successfully"}
-
-# @login_is_required
-# @app.route('/get_threads', methods=['GET'])
-# def get_threads():
-#     return {"thread_ids":[db.fetch_thread_id('database.csv', session["google_id"])]}
 
 
 if __name__ == '__main__':
