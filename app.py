@@ -15,8 +15,8 @@ import google.auth.transport.requests
 from utils.backendopenai import BackendOpenAI
 from db.records import Records
 
-# from dotenv import load_dotenv
-# load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('GOOGLE_SECRET_KEY')
@@ -350,4 +350,4 @@ def update_profile(status=None):
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=8080)
